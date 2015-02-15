@@ -1,0 +1,131 @@
+--                                   Storage API
+--						Persisting variable api for computercraft
+--                                By ninjabiscuit
+
+
+	
+	
+local storagePath = ""
+
+
+
+--Use this to get the main directory of where all data is cached.
+function getSP()  
+  return storagePath
+end
+
+--[[
+  ==============================================================================
+  Sets up a storage directory if one does not exist.                               
+  Sets up another directory within storage for the currently running program.  
+      
+                                                                                   
+ 	AppData              (directory)                                                                          
+ 		program name     (directory)                                                 
+ 			objectType   (directory)                                                            
+ 				objects  (files)
+					
+	The following is a depiction of the folder structure for:
+	storageAPI.createPaths(fs.getName(shell.getRunningProgram()), "Furnaces")
+ 	-----------------------------                                                    
+ 	AppData                                                                          
+ 		EasyBake                                                                    
+ 			Furnaces
+				furnace1 <--- a cached furnace object
+                                                                                   
+                                                                                   
+  Supply the name of the program that will use the API                             
+  name = fs.getName(shell.getRunningProgram())                                     
+  ===============================================================================
+--]]
+
+function createPaths(name, ...)
+	storagePath = ("AppData/"..name)
+	fs.makeDir(storagePath)
+	for _, v in ipairs(arg) do
+		fs.makeDir(storagePath.."/"..v)
+	end
+end
+
+-- Used with multiple programs accessing the same file
+function setPath(name)
+	storagePath = ("AppData/"..name)
+end
+
+--[[
+  ======================================================
+  Stores the given table in a specified file path.       
+  The second parameter can be a string of the path but  
+  is not necessary. If not string is present the method
+  will attempt to obtain a filepath using
+  table_t["address"] to cache the table's data.
+  ======================================================
+--]]
+
+function cache(table_t, string_filePath)
+
+-- Determines a filepath
+	local filePath = string_filePath or 
+	(storagePath.."/"..(table_t["address"] or ""))
+
+-- Does operation
+	local file = assert(fs.open(filePath, "w"), "Assertion Failed: Indeterminate filePath:-->\n"..filePath)
+  	file.write(textutils.serialize(table_t))
+  	file.close()
+end
+
+--[[
+  ==========================================================
+  Retrieves the table from a specified filepath.                  
+  The parameter can be a table, which contains a key with the
+  file path e.g. table["address"] = "Furnace/furnace1" or it
+  can be a specific string.     
+  ==========================================================
+--]]
+
+function fetch(filePath)
+
+-- Determines filepath
+	if type(filePath) == "string" then
+		filePath = filePath
+	elseif type(filePath) == "table" then
+		filePath = (storagePath.."/"..(filePath["address"] or ""))  
+	end
+
+-- Does operation
+	local file = assert(fs.open(filePath, "r"), "Assertion Failed: Indeterminate filePath:-->\n"..filePath)
+	file.close()
+	local text = ""
+	for lines in io.lines(filePath) do
+		text = text..lines
+	end
+  	return textutils.unserialize(text)
+end
+
+
+
+-- A print function to see what is currently stored for a given table or String location
+function about(filePath, color)
+
+-- Determines filepath
+	if type(filePath) == "string" then
+		filePath = filePath
+	elseif type(filePath) == "table" then
+		filePath = (storagePath.."/"..(filePath["address"] or ""))  
+	end
+	
+-- prints
+local file = assert(fs.open(filePath, "r"), "Assertion Failed: Indeterminate filePath:-->\n"..filePath)
+	file.close()
+	local color = color or colors.orange
+	term.setTextColor(color)
+	local count = 0
+	for lines in io.lines(filePath) do
+		print(lines)
+		count = count + 1
+		if count > 5 then
+			local wait = io.read() -- if the table has a lot of values this enables you to read them line by line.
+		end
+	end
+	term.setTextColor(colors.white)
+end
