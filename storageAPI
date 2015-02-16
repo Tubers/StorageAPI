@@ -1,5 +1,5 @@
---                                   Storage API
---						Persisting variable api for computercraft
+--                                   Storage API v0.2
+--			Persisting variable api for computercraft
 --                                By ninjabiscuit
 
 
@@ -39,17 +39,23 @@ end
   ===============================================================================
 --]]
 
-function createPaths(name, ...)
+function createPath(name) -- new storage path
 	storagePath = ("AppData/"..name)
 	fs.makeDir(storagePath)
+end
+
+
+function setPath(name) -- set storage path to one that was already made.
+	storagePath = ("AppData/"..name)
+end
+
+function createSubPath(...)
+	if not(fs.exists(storagePath)) then
+		error("Create or set a storage path first.")
+	end
 	for _, v in ipairs(arg) do
 		fs.makeDir(storagePath.."/"..v)
 	end
-end
-
--- Used with multiple programs accessing the same file
-function setPath(name)
-	storagePath = ("AppData/"..name)
 end
 
 --[[
@@ -119,13 +125,8 @@ local file = assert(fs.open(filePath, "r"), "Assertion Failed: Indeterminate fil
 	file.close()
 	local color = color or colors.orange
 	term.setTextColor(color)
-	local count = 0
 	for lines in io.lines(filePath) do
 		print(lines)
-		count = count + 1
-		if count > 5 then
-			local wait = io.read() -- if the table has a lot of values this enables you to read them line by line.
-		end
 	end
 	term.setTextColor(colors.white)
 end
